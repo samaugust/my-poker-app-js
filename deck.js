@@ -17,19 +17,12 @@ var deck = new(function() {
     });
   }));
 
-  this.shuffle = function() {
-    var currentIndex = this.cards.length,
-      temporaryValue, randomIndex;
-    while (0 !== currentIndex) {
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex -= 1;
-      temporaryValue = this.cards[currentIndex];
-      this.cards[currentIndex] = this.cards[randomIndex];
-      this.cards[randomIndex] = temporaryValue;
-    }
-    return this.cards;
-  };
-
+  this.shuffle = function(cards) {
+    return cards.sort(function() {
+      return 0.5 - Math.random();
+    });
+  }
+  
   // shuffle on init
   this.shuffle();
 
