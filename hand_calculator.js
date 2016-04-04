@@ -32,6 +32,12 @@ var HandCalculator = {
     });
   },
   
+  flatten: function(arr) {
+    return arr.reduce(function(current, next) {
+      return current.concat(next);
+    });
+  },
+  
   unique: function(arr) {
     var hash = {}, result = [];
     for (var i = 0, l = arr.length; i < l; ++i) {
@@ -417,16 +423,181 @@ var HandCalculator = {
     else {
       return bestHand;
     }
-  }
+  },
   
-};
+  bestPair: function(hands) {
+    
+    var bestHand = [], ranksArr = hands.map(this.rank), func = this.whichRankOccursNTimes;
+    var pairRanksArr = ranksArr.map(function(rankArr) {
+      return func(rankArr, 2);
+    });
+    
+    pairRanksArr.reduce(function(maxVal, val, i) {
+      if (val > maxVal) {
+        bestHand = [hands[i]];
+        return val;
+      }
+      else if (val == maxVal) {
+        bestHand.push(hands[i]);
+        return val;
+      }
+      else {
+        return maxVal;
+      }
+    }, 0);
+    
+    if (bestHand.length > 1) {
+      return this.assessKickers(bestHand, 2, 2);
+    }
+    else {
+      return bestHand;
+    }
+  },
+  
+  bestAir: function(hands) {
+    return this.assessKickers(hands, 4, 1);
+  },
+  
+  //////////////////////////////////////////////////////////////////////
+  ////////////////////////MASTER METHODS////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  
+  
+  winningHand: function(hand) {
+    
+    hand = hand.length == 1 ? this.flatten(hand) : hand[0];
+    
+    if (this.straightFlush(hand) === "royal flush") {
+      return "ROYAL FLUSH!!!!!!";
+    }
+    else if (this.straightFlush(hand) === true) {
+      return "STRAIGHT FLUSH!!!!!";
+    }
+    else if (this.quads(hand) === true) {
+      return "FOUR OF A KIND!!!!";
+    }
+    else if (this.fullHouse(hand) === true) {
+      return "FULL HOUSE!!!";
+    }
+    else if (this.flush(hand) === true) {
+      return "FLUSH!!!";
+    }
+    else if (this.straight(hand) === true) {
+      return "STRAIGHT!!!";
+    }
+    else if (this.trips(hand) === true) {
+      return "THREE OF A KIND!!";
+    }
+    else if (this.twoPair(hand) === true) {
+      return "TWO PAIR!!";
+    }
+    else if (this.pair(hand) === true) {
+      return "PAIR!";
+    }
+    else {
+      return "COMPLETE AIR";
+    }
+  },
+  
+  evaluateHand: function(hand) {
+    
+    if (HandCalculator.straightFlush(hand) === "royal flush") {
+      return 10;
+    }
+    else if (HandCalculator.straightFlush(hand) === true) {
+      return 9;
+    }
+    else if (HandCalculator.quads(hand) === true) {
+      return 8;
+    }
+    else if (HandCalculator.fullHouse(hand) === true) {
+      return 7;
+    }
+    else if (HandCalculator.flush(hand) === true) {
+      return 6;
+    }
+    else if (HandCalculator.straight(hand) === true) {
+      return 5;
+    }
+    else if (HandCalculator.trips(hand) === true) {
+      return 5;
+    }
+    else if (HandCalculator.twoPair(hand) === true) {
+      return 3;
+    }
+    else if (HandCalculator.pair(hand) === true) {
+      return 2;
+    }
+    else {
+      return 1;
+    }
+  },
+  
+  bestHand: function(hands) {
+    
+    var bestHand = [], handValues = hands.map(this.evaluateHand), bestHandScore;
+    
+    handValues.reduce(function(maxVal, val, i) {
+      if (val > maxVal) {
+        bestHand = [hands[i]];
+        bestHandScore = val;
+        return val;
+      }
+      else if (val === maxVal) {
+        bestHand.push(hands[i]);
+        return val;
+      }
+      else {
+        return maxVal;
+      }
+    }, 0);
+    
+    if (bestHand.length > 1) {
+      
+      if (bestHandScore === 1) {
+        return this.bestAir(bestHand);
+      }
+      else if (bestHandScore === 2) {
+        return this.bestPair(bestHand);
+      }
+      else if (bestHandScore === 3) {
+        return this.bestTwoPair(bestHand);
+      }
+      else if (bestHandScore === 4) {
+        return this.bestTrips(bestHand);
+      }
+      else if (bestHandScore === 5 || bestHandScore === 9) {
+        return this.bestStraight(bestHand);
+      }
+      else if (bestHandScore === 6) {
+        return this.bestFlush(bestHand);
+      }
+      else if (bestHandScore === 7) {
+        return this.bestFullHouse(bestHand);
+      }
+      else if (bestHandScore === 8) {
+        return this.bestQuads(bestHand);
+      }
+      else {
+        return bestHand;
+      }
+    }
+    else {
+      return bestHand;
+    }
+  }
 
+};
+// console.log(HandCalculator.winningHand(HandCalculator.bestHand([["6a","6b","3a","4c","4a"],["5a","5b","3a","6c","6a"],["6a","6b","4a","5c","5a"]])));
+// console.log(HandCalculator.winningHand(["2a","4b","9a","11a","10a"]));
+// console.log(HandCalculator.bestAir([["9a","10b","3a","6c","7a"],["10a","9b","4a","7c","6a"],["10a","9b","2a","6c","7a"]]));
+// console.log(HandCalculator.bestPair([["9a","9b","4a","6c","7a"],["8a","8b","4a","6c","5a"],["9a","9b","5a","6c","7a"]]));
 // console.log(HandCalculator.bestTwoPair([["6a","6b","3a","4c","4a"],["5a","5b","3a","6c","6a"],["6a","6b","4a","5c","5a"]]));
 // console.log(HandCalculator.bestTrips([["6a","6b","3a","6c","4a"],["5a","5b","3a","5c","6a"],["6a","6b","4a","6c","2a"]]));
 // console.log(HandCalculator.bestStraight([["6a","3a","2a","5a","4a"],["5a","4a","3a","7a","6a"],["14a","4a","3a","5a","2a"]]));
 // console.log(HandCalculator.bestFlush([["3a","6a","9a","10a","14a"],["2a","6a","9a","10a","14a"]]));
 // console.log(HandCalculator.bestFullHouse([["3a","3b","3c","2a","2c"],["3a","4b","4c","3c","3c"]]));
-// console.log(HandCalculator.bestQuads([["13a","13b","13c","13d","2a"],["13a","13b","13c","13d","1a"]]));
+// console.log(HandCalculator.bestQuads([["13a","13b","13c","13d","2a"],["13a","13b","13c","13d","3a"]]));
 // console.log(HandCalculator.pair(["4a","5b","5a","2a","3c"]));
 // console.log(HandCalculator.twoPair(["4a","4b","3a","2a","3c"]));
 // console.log(HandCalculator.trips(["4c","3b","3a","5a","3c"]));
