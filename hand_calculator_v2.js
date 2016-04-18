@@ -1,6 +1,5 @@
 var HandCalculator = (function () {
 
-  
   //////////////////////////////////////////////////////////////////////
   /////////////////////////HELPER METHODS///////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -104,9 +103,13 @@ var HandCalculator = (function () {
     return bestHand;
   };
   
-  var deduceBestHand = function(arr, bestHand, hands) {
+  var deduceBestHand = function(arr, bestHand, hands, bestHandScore) {
+    
     arr.reduce(function(maxVal, val, i) {
       if (val > maxVal) {
+        if (bestHandScore !== undefined) {
+          bestHandScore = val;
+        }
         bestHand = [hands[i]];
         return val;
       }
@@ -118,7 +121,12 @@ var HandCalculator = (function () {
         return maxVal;
       }
     }, 0);
-    return bestHand;
+    if (bestHandScore !== undefined) {
+      return [bestHand, bestHandScore];
+    }
+    else {
+      return bestHand;
+    }
   };
 
   var allHandsFromCards = function(cards) {
@@ -341,7 +349,7 @@ var HandCalculator = (function () {
     var bestHand = [], rankArrs = hands.map(rank);
     
     var tripCards = rankArrs.map(function(hand){
-      return whicRankOccursNTimes(hand, 3);
+      return whichRankOccursNTimes(hand, 3);
     });
     
     bestHand = deduceBestHand(tripCards, bestHand, hands);
@@ -357,6 +365,7 @@ var HandCalculator = (function () {
   var bestTwoPair = function(hands) {
     
     var bestHand = [], rankArrs = hands.map(rank);
+    
     var topPairs = rankArrs.map(function(rankArr) {
       return Math.max.apply(Math, whichRankOccursNTimes(rankArr, 2));
     });
@@ -388,6 +397,7 @@ var HandCalculator = (function () {
   var bestPair = function(hands) {
     
     var bestHand = [], ranksArr = hands.map(rank);
+    
     var pairCards = ranksArr.map(function(rankArr) {
       return whichRankOccursNTimes(rankArr, 2);
     });
@@ -411,7 +421,63 @@ var HandCalculator = (function () {
   //////////////////////////////////////////////////////////////////////
   
   
-  var winningHand = function(hand) {
+  var evaluateHand = function(hand) {
+    
+    if (straightFlush(hand) === "royal flush") {
+      return 9;
+    }
+    else if (straightFlush(hand)) {
+      return 8;
+    }
+    else if (quads(hand)) {
+      return 7;
+    }
+    else if (fullHouse(hand)) {
+      return 6;
+    }
+    else if (flush(hand)) {
+      return 5;
+    }
+    else if (straight(hand)) {
+      return 4;
+    }
+    else if (trips(hand)) {
+      return 3;
+    }
+    else if (twoPair(hand)) {
+      return 2;
+    }
+    else if (pair(hand)) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  };
+  
+  var theBestHand = function(hands) {
+    
+    var bestHand = [], handValues = hands.map(evaluateHand), bestHandScore = 0;
+    
+    bestHand = deduceBestHand(handValues, bestHand, hands, bestHandScore)[0];
+    bestHandScore = deduceBestHand(handValues, bestHand, hands, bestHandScore)[1];
+    
+    if (bestHandScore === 9) {
+      return bestHand;
+    }
+    
+    var tieBreakerMethodsArr = [bestAir, bestPair, bestTwoPair, bestTrips, bestStraight, bestFlush,
+      bestFullHouse, bestQuads, bestStraight];
+    
+    if (bestHand.length > 1) {
+      return tieBreakerMethodsArr[bestHandScore](bestHand);
+    }
+    else {
+      return bestHand;
+    }
+  };
+
+  var winningHandLabel = function(hand) {
     
     hand = hand.length == 1 ? flatten(hand) : hand[0];
     
@@ -446,104 +512,16 @@ var HandCalculator = (function () {
       return "COMPLETE AIR";
     }
   };
-  
-  var evaluateHand = function(hand) {
-    
-    if (straightFlush(hand) === "royal flush") {
-      return 10;
-    }
-    else if (straightFlush(hand) === true) {
-      return 9;
-    }
-    else if (quads(hand) === true) {
-      return 8;
-    }
-    else if (fullHouse(hand) === true) {
-      return 7;
-    }
-    else if (flush(hand) === true) {
-      return 6;
-    }
-    else if (straight(hand) === true) {
-      return 5;
-    }
-    else if (trips(hand) === true) {
-      return 5;
-    }
-    else if (twoPair(hand) === true) {
-      return 3;
-    }
-    else if (pair(hand) === true) {
-      return 2;
-    }
-    else {
-      return 1;
-    }
-  };
-  
-  var theBestHand = function(hands) {
-    
-    var bestHand = [], handValues = hands.map(evaluateHand), bestHandScore;
-    
-    handValues.reduce(function(maxVal, val, i) {
-      if (val > maxVal) {
-        bestHand = [hands[i]];
-        bestHandScore = val;
-        return val;
-      }
-      else if (val === maxVal) {
-        bestHand.push(hands[i]);
-        return val;
-      }
-      else {
-        return maxVal;
-      }
-    }, 0);
-    
-    if (bestHand.length > 1) {
-      
-      if (bestHandScore === 1) {
-        return bestAir(bestHand);
-      }
-      else if (bestHandScore === 2) {
-        return bestPair(bestHand);
-      }
-      else if (bestHandScore === 3) {
-        return bestTwoPair(bestHand);
-      }
-      else if (bestHandScore === 4) {
-        return bestTrips(bestHand);
-      }
-      else if (bestHandScore === 5 || bestHandScore === 9) {
-        return bestStraight(bestHand);
-      }
-      else if (bestHandScore === 6) {
-        return bestFlush(bestHand);
-      }
-      else if (bestHandScore === 7) {
-        return bestFullHouse(bestHand);
-      }
-      else if (bestHandScore === 8) {
-        return bestQuads(bestHand);
-      }
-      else {
-        return bestHand;
-      }
-    }
-    else {
-      return bestHand;
-    }
-  };
 
   return {
     theBestHand : theBestHand,
-    winningHand : winningHand
+    winningHandLabel : winningHandLabel
   };
 
 })();
 
 // console.log(HandCalculator.theBestHand([["9a","10b","3a","6c","7a"],["10a","9b","4a","7c","6a"],["10a","9b","2a","6c","7a"]]));
-// console.log(HandCalculator.winningHand(["2a","4b","9a","11a","10a"]));
+// console.log(HandCalculator.winningHandLabel(["2a","4b","9a","11a","10a"]));
 // console.log(HandCalculator.theBestHand([["9a","10b","3a","6c","7a"],["10a","9b","4a","7c","6a"],["10a","9b","2a","6c","7a"]]));
 // console.log(HandCalculator.theBestHand([["9a","9b","4a","6c","7a"],["8a","8b","4a","6c","5a"],["9a","9b","5a","6c","7a"]]));
 // console.log(HandCalculator.theBestHand([["6a","6b","3a","4c","4a"],["5a","5b","3a","6c","6a"],["6a","6b","4a","5c","5a"]]));
