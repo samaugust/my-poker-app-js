@@ -70,7 +70,6 @@ var HandCalculator = (function () {
     return desiredRank.length === 1 ? desiredRank[0] : desiredRank;
   };
   
-  
   var isolateKickers = function(rankArr, n) {
     
     var kickers = [];
@@ -102,6 +101,23 @@ var HandCalculator = (function () {
       cardIndex--;
       return assessKickers(hands, cardIndex, n);
     }
+    return bestHand;
+  };
+  
+  var deduceBestHand = function(arr, bestHand, hands) {
+    arr.reduce(function(maxVal, val, i) {
+      if (val > maxVal) {
+        bestHand = [hands[i]];
+        return val;
+      }
+      else if (val === maxVal) {
+        bestHand.push(hands[i]);
+        return val;
+      }
+      else {
+        return maxVal;
+      }
+    }, 0);
     return bestHand;
   };
 
@@ -259,16 +275,15 @@ var HandCalculator = (function () {
   
   
   var bestQuads = function(hands) {
-    var bestHand = [], highestRank = 0;
-    for (let i in hands) {
-      if (whichRankOccursNTimes(rank(hands[i]), 4) > highestRank) {
-        bestHand = [hands[i]];
-        highestRank = whichRankOccursNTimes(rank(hands[i]), 4);
-      }
-      else if (whichRankOccursNTimes(rank(hands[i]), 4) === highestRank) {
-        bestHand.push(hands[i]);      
-      }
-    }
+    
+    var bestHand = [], rankArrs = hands.map(rank);
+    
+    var quadCards = rankArrs.map(function(hand){
+      return whichRankOccursNTimes(hand, 4);
+    });
+    
+    bestHand = deduceBestHand(quadCards, bestHand, hands);
+    
     if (bestHand.length === 1) {
       return bestHand;
     }
@@ -279,36 +294,21 @@ var HandCalculator = (function () {
   
   var bestFullHouse = function(hands) {
   
-    var bestHand = [], bestestHand = [], highestRank = 0;
-  
-    for (let i in hands) {
-      let handRankArr = rank(hands[i]);
+    var bestHand = [], rankArrs = hands.map(rank);
     
-      if (whichRankOccursNTimes(handRankArr, 3) > highestRank) {
-        bestHand = [hands[i]];
-        highestRank = whichRankOccursNTimes(handRankArr, 3);
-      }
-      else if (whichRankOccursNTimes(handRankArr, 3) === highestRank) {
-        bestHand.push(hands[i]);
-      }
-    }
-  
+    var tripCards = rankArrs.map(function(hand){
+      return whichRankOccursNTimes(hand, 3);
+    });
+    
+    var pairCards = rankArrs.map(function(hand){
+      return whichRankOccursNTimes(hand, 2);
+    });
+    
+    bestHand = deduceBestHand(tripCards, bestHand, hands);
+    
     if (bestHand.length > 1) {
-    
-      highestRank = 0;
-    
-      for (let i in bestHand) {
-        let handRankArr = rank(bestHand[i]);
-      
-        if (whichRankOccursNTimes(handRankArr, 2) > highestRank) {
-          bestestHand = [bestHand[i]];
-          highestRank = whichRankOccursNTimes(handRankArr, 2);
-        }
-        else if (whichRankOccursNTimes(handRankArr, 2) === highestRank) {
-          bestestHand.push(bestHand[i]);
-        }
-      }
-      return bestestHand;
+      bestHand = deduceBestHand(pairCards, bestHand, hands);
+      return bestHand;
     }
     else {
       return bestHand;
@@ -332,19 +332,7 @@ var HandCalculator = (function () {
       });
     });
 
-    totalsArr.reduce(function(maxVal, val, i) {
-      if (val > maxVal) {
-        bestHand = [hands[i]];
-        return val;
-      }
-      else if (val === maxVal) {
-        bestHand.push(hands[i]);
-        return val;
-      }
-      else {
-        return maxVal;
-      }
-    }, 0);
+    bestHand = deduceBestHand(totalsArr, bestHand, hands);
     return bestHand;
   };
   
@@ -356,19 +344,7 @@ var HandCalculator = (function () {
       return whicRankOccursNTimes(hand, 3);
     });
     
-    tripCards.reduce(function(maxVal, val, i) {
-      if (val > maxVal) {
-        bestHand = [hands[i]];
-        return val;
-      }
-      else if (val === maxVal) {
-        bestHand.push(hands[i]);
-        return val;
-      }
-      else {
-        return maxVal;
-      }
-    }, 0);
+    bestHand = deduceBestHand(tripCards, bestHand, hands);
     
     if (bestHand.length > 1) {
       return assessKickers(bestHand, 1, 3);
@@ -391,29 +367,13 @@ var HandCalculator = (function () {
       return whichRankOccursNTimes(rankArr, 1);
     });
     
-    var deduceBestHand = function(arr) {
-      arr.reduce(function(maxVal, val, i) {
-        if (val > maxVal) {
-          bestHand = [hands[i]];
-          return val;
-        }
-        else if (val === maxVal) {
-          bestHand.push(hands[i]);
-          return val;
-        }
-        else {
-          return maxVal;
-        }
-      }, 0);      
-    };
-    
-    deduceBestHand(topPairs);
+    bestHand = deduceBestHand(topPairs, bestHand, hands);
     
     if (bestHand.length > 1) {
-      deduceBestHand(bottomPairs);
+      bestHand = deduceBestHand(bottomPairs, bestHand, hands);
       
       if (bestHand.length > 1) {
-        deduceBestHand(kickers);
+        bestHand = deduceBestHand(kickers, bestHand, hands);
         return bestHand;
       }
       else {
@@ -428,23 +388,11 @@ var HandCalculator = (function () {
   var bestPair = function(hands) {
     
     var bestHand = [], ranksArr = hands.map(rank);
-    var pairRanksArr = ranksArr.map(function(rankArr) {
+    var pairCards = ranksArr.map(function(rankArr) {
       return whichRankOccursNTimes(rankArr, 2);
     });
     
-    pairRanksArr.reduce(function(maxVal, val, i) {
-      if (val > maxVal) {
-        bestHand = [hands[i]];
-        return val;
-      }
-      else if (val == maxVal) {
-        bestHand.push(hands[i]);
-        return val;
-      }
-      else {
-        return maxVal;
-      }
-    }, 0);
+    bestHand = deduceBestHand(pairCards, bestHand, hands);
     
     if (bestHand.length > 1) {
       return assessKickers(bestHand, 2, 2);
