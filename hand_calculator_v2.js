@@ -10,7 +10,8 @@ var HandCalculator = (function () {
     var rankArr = [];
     
     for (var i in cards) {
-      cards[i].length === 2 ? rankArr.push(Number(cards[i].slice(0,1))) : rankArr.push(Number(cards[i].slice(0,2)));
+      cards[i].length === 2 ? rankArr.push(Number(cards[i].slice(0,1))) : 
+                              rankArr.push(Number(cards[i].slice(0,2)));
     }
     return rankArr.sort(function(a,b){return a > b});
   };
@@ -20,7 +21,8 @@ var HandCalculator = (function () {
     var suitArr = [];
     
     for (var i in cards) {
-      cards[i].length === 2 ? suitArr.push(cards[i].slice(1,2)) : suitArr.push(cards[i].slice(2,3));
+      cards[i].length === 2 ? suitArr.push(cards[i].slice(1,2)) : 
+                              suitArr.push(cards[i].slice(2,3));
     }
     return suitArr;
   };
@@ -457,17 +459,19 @@ var HandCalculator = (function () {
   
   var theBestHand = function(hands) {
     
-    var bestHand = [], handValues = hands.map(evaluateHand), bestHandScore = 0;
+    var bestHand = [], bestHandScore = 0, handValues = hands.map(evaluateHand);
     
-    bestHand = deduceBestHand(handValues, bestHand, hands, bestHandScore)[0];
-    bestHandScore = deduceBestHand(handValues, bestHand, hands, bestHandScore)[1];
+    var tieBreakerMethodsArr = [bestAir, bestPair, bestTwoPair, bestTrips,
+        bestStraight, bestFlush, bestFullHouse, bestQuads, bestStraight];
+    
+    var bestArr = deduceBestHand(handValues, bestHand, hands, bestHandScore);
+    
+    bestHand = bestArr[0];
+    bestHandScore = bestArr[1];
     
     if (bestHandScore === 9) {
       return bestHand;
     }
-    
-    var tieBreakerMethodsArr = [bestAir, bestPair, bestTwoPair, bestTrips, bestStraight, bestFlush,
-      bestFullHouse, bestQuads, bestStraight];
     
     if (bestHand.length > 1) {
       return tieBreakerMethodsArr[bestHandScore](bestHand);
